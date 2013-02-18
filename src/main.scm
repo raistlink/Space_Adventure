@@ -1,6 +1,10 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Test for Cairo with OpenGL
-(define-structure world gamestate position positionstate)
+(define-structure shot posx posy)
+(define-structure enemy posx posy)
+(define-structure world gamestate position positionstate bullets enemies)
+
+
 (define (main)
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
    (lambda (event world)
@@ -21,19 +25,23 @@
                   'exit)
                  ((= key SDLK_RETURN)
                   (if (eq? (world-gamestate world) 'splashscreen)
-                      (make-world 'gamescreen (world-position world) 'idle)
-                      (make-world 'splashscreen (world-position world) 'idle)))
+                      (make-world 'gamescreen (world-position world) 'idle (world-bullets world) (world-enemies world))
+                      (make-world 'splashscreen (world-position world) 'idle (world bullets world) (world-enemies world))))
                  ((= key SDLK_h)
                   (if (eq? (world-gamestate world) 'splashscreen)
-                      (make-world 'highscores (world-position world) 'idle)
+                      (make-world 'highscores (world-position world) 'idle (world-bullets world) (world-enemies world))
+                      world))
+                 ((= key SDLK_SPACE)
+                  (if (eq? (world-gamestate world) 'gamescreen)
+                      (make-world (world-gamestate world) (world-position world) (world-positionstate world)  (cons (make-shot (world-position world) 630) (world-bullets world)) (world-enemies world))
                       world))
                  ((= key SDLK_LEFT)
                   (if (eq? (world-gamestate world) 'gamescreen)
-                      (make-world 'gamescreen (world-position world) 'left)
+                      (make-world 'gamescreen (world-position world) 'left (world-bullets world) (world-enemies world))
                       world))
                  ((= key SDLK_RIGHT)
                   (if (eq? (world-gamestate world) 'gamescreen)
-                      (make-world 'gamescreen (world-position world) 'right)
+                      (make-world 'gamescreen (world-position world) 'right (world-bullets world) (world-enemies world))
                       world))
                  (else
                   (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))
@@ -44,11 +52,11 @@
                       (SDL_KeyboardEvent-keysym kevt))))
            (cond ((= key SDLK_LEFT)
                   (if (eq? (world-positionstate world) 'left)
-                      (make-world (world-gamestate world) (world-position world) 'idle)
+                      (make-world (world-gamestate world) (world-position world) 'idle (world-bullets world) (world-enemies world))
                       world))
                  ((= key SDLK_RIGHT)
                   (if (eq? (world-positionstate world) 'right)
-                      (make-world (world-gamestate world) (world-position world) 'idle)
+                      (make-world (world-gamestate world) (world-position world) 'idle (world-bullets world) (world-enemies world))
                       world))
                  (else
                   world))))
@@ -102,5 +110,6 @@
    (make-world 
     'splashscreen
     600.0
-    'idle)))
-
+    'idle
+    '()
+    '())))
