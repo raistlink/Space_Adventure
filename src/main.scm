@@ -26,7 +26,7 @@
                  ((= key SDLK_RETURN)
                   (if (eq? (world-gamestate world) 'splashscreen)
                       (make-world 'gamescreen (world-position world) 'idle (world-bullets world) (world-enemies world))
-                      (make-world 'splashscreen (world-position world) 'idle (world bullets world) (world-enemies world))))
+                      (make-world 'splashscreen (world-position world) 'idle (world-bullets world) (world-enemies world))))
                  ((= key SDLK_h)
                   (if (eq? (world-gamestate world) 'splashscreen)
                       (make-world 'highscores (world-position world) 'idle (world-bullets world) (world-enemies world))
