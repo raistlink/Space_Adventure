@@ -2,8 +2,8 @@
 (dependencies:
  (main
   (load
-   (= gl-cairo)
    ;(fabric: algorithm/list)
+   (= gl-cairo)
    ))
  (gl-cairo
   (include
