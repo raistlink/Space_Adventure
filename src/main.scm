@@ -4,6 +4,22 @@
 (define-structure enemy posx posy)
 (define-structure world gamestate position positionstate bullets enemies)
 
+(define update-bullet 
+  (lambda (shot)
+    (shot-posy-set! shot (- (shot-posy shot) 10))))
+
+(define (filter pred lis)               ; Sleazing with EQ? makes this
+  (let recur ((lis lis))  
+    (if (null? lis) lis   ; Use NOT-PAIR? to handle dotted lists.
+        (let ((head (car lis))
+              (tail (cdr lis)))
+          (if (pred head)
+              (let ((new-tail (recur tail))) ; Replicate the RECUR call so
+                (if (eq? tail new-tail) lis
+                    (cons head new-tail)))
+              (recur tail))))))
+
+(define (remove pred lis) (filter (lambda (x) (not (pred x))) lis))
 
 (define (main)
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
@@ -33,7 +49,7 @@
                       world))
                  ((= key SDLK_SPACE)
                   (if (eq? (world-gamestate world) 'gamescreen)
-                      (make-world (world-gamestate world) (world-position world) (world-positionstate world)  (cons (make-shot (world-position world) 630) (world-bullets world)) (world-enemies world))
+                      (make-world (world-gamestate world) (world-position world) (world-positionstate world)  (cons (make-shot (+ (world-position world) 20) 650.0) (world-bullets world)) (world-enemies world))
                       world))
                  ((= key SDLK_LEFT)
                   (if (eq? (world-gamestate world) 'gamescreen)
@@ -79,11 +95,13 @@
           (cairo_fill cr))
          ((gamescreen)
           (if (eq? (world-positionstate world) 'left)
-              (if (> (world-position world) 0)
+              (if (> (world-position world) 0.0)
                   (world-position-set! world (- (world-position world) 3))))
           (if (eq? (world-positionstate world) 'right)
-              (if (< (world-position world) 1240)
+              (if (< (world-position world) 1240.0)
                   (world-position-set! world (+ (world-position world) 3))))
+          (map update-bullet (world-bullets world))
+          
           (cairo_set_source_rgba cr 0.0 0.0 0.0 1.0)
           (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
           (cairo_fill cr)
@@ -93,6 +111,14 @@
           (cairo_move_to cr 300.0 350.0)
           (cairo_show_text cr "GAMESCREEN")
           (cairo_fill cr)
+          (let loop ((rest (world-bullets world)))
+            (if (null? rest)
+                '()
+                (begin (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
+                       (cairo_rectangle cr (shot-posx (car rest)) (shot-posy (car rest)) 5. 10.0)
+                       (cairo_fill cr)
+                       (loop (cdr rest)))))
+          (world-bullets-set! world (remove (lambda (shot) (< (shot-posy shot) 0)) (world-bullets world)))
           (cairo_set_source_rgba cr 1.0 1.0 1.0 0.8)
           (cairo_rectangle cr (world-position world) 650.0 40.0 40.0)
           (cairo_fill cr))

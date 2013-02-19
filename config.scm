@@ -2,7 +2,9 @@
 (dependencies:
  (main
   (load
-   (= gl-cairo)))
+   (= gl-cairo)
+   ;(fabric: algorithm/list)
+   ))
  (gl-cairo
   (include
    (core: base-macros))
