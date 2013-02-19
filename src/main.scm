@@ -8,7 +8,7 @@
   (lambda (shot)
     (shot-posy-set! shot (- (shot-posy shot) 10))))
 
-(define (filter pred lis)               ; Sleazing with EQ? makes this
+(define (filter pred lis) ; Sleazing with EQ? makes this
   (let recur ((lis lis))  
     (if (null? lis) lis   ; Use NOT-PAIR? to handle dotted lists.
         (let ((head (car lis))
@@ -82,11 +82,12 @@
                   world))))
         (else
          world))))
-   (let ((posx 80.0))
+   (let ((spawntimer 5000) (spawncount 0))
      (lambda (cr time world)
        (println (string-append "time: " (object->string time) " ; world: " (object->string world)))
        ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
        (case (world-gamestate world)
+        
          ((splashscreen)
           (cairo_set_source_rgba cr 0.0 0.0 0.0 1.0)
           (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
@@ -98,14 +99,19 @@
           (cairo_show_text cr "SPLASHSCREEN")
           (cairo_fill cr))
          ((gamescreen)
+          ;;Update phase
           (if (eq? (world-positionstate world) 'left)
               (if (> (world-position world) 0.0)
-                  (world-position-set! world (- (world-position world) 3))))
+                  (world-position-set! world (- (world-position world) 6))))
           (if (eq? (world-positionstate world) 'right)
               (if (< (world-position world) 1240.0)
-                  (world-position-set! world (+ (world-position world) 3))))
+                  (world-position-set! world (+ (world-position world) 6))))
           (map update-bullet (world-bullets world))
+
+
+
           
+          ;;Draw phase
           (cairo_set_source_rgba cr 0.0 0.0 0.0 1.0)
           (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
           (cairo_fill cr)
@@ -126,6 +132,9 @@
           (cairo_set_source_rgba cr 1.0 1.0 1.0 0.8)
           (cairo_rectangle cr (world-position world) 650.0 40.0 40.0)
           (cairo_fill cr))
+
+
+
          ((highscores)
           (cairo_set_source_rgba cr 0.0 0.0 0.0 1.0)
           (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
