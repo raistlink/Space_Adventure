@@ -7,6 +7,9 @@
 (define update-bullet 
   (lambda (shot)
     (shot-posy-set! shot (- (shot-posy shot) 10))))
+(define update-enemy
+  (lambda (enemy)
+    (enemy-posy-set! enemy (+ (enemy-posy enemy) 5))))
 
 (define (filter pred lis) ; Sleazing with EQ? makes this
   (let recur ((lis lis))  
@@ -82,7 +85,7 @@
                   world))))
         (else
          world))))
-   (let ((spawntimer 5000) (spawncount 0))
+   (let ((spawntimer 3000) (spawncount 0))
      (lambda (cr time world)
        (println (string-append "time: " (object->string time) " ; world: " (object->string world)))
        ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
@@ -106,8 +109,11 @@
           (if (eq? (world-positionstate world) 'right)
               (if (< (world-position world) 1240.0)
                   (world-position-set! world (+ (world-position world) 6))))
+          (if (> (- time spawncount) spawntimer)
+              (begin (set! spawncount (+ spawncount spawntimer))
+                     (world-enemies-set! world (cons (make-enemy (exact->inexact (random-integer 1280)) -10.0) (world-enemies world)))))
           (map update-bullet (world-bullets world))
-
+          (map update-enemy (world-enemies world))
 
 
           
@@ -125,7 +131,14 @@
             (if (null? rest)
                 '()
                 (begin (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
-                       (cairo_rectangle cr (shot-posx (car rest)) (shot-posy (car rest)) 5. 10.0)
+                       (cairo_rectangle cr (shot-posx (car rest)) (shot-posy (car rest)) 5.0 10.0)
+                       (cairo_fill cr)
+                       (loop (cdr rest)))))
+          (let loop ((rest (world-enemies world)))
+            (if (null? rest)
+                '()
+                (begin (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
+                       (cairo_rectangle cr (enemy-posx (car rest)) (enemy-posy (car rest)) 20.0 20.0)
                        (cairo_fill cr)
                        (loop (cdr rest)))))
           (world-bullets-set! world (remove (lambda (shot) (< (shot-posy shot) 0)) (world-bullets world)))
