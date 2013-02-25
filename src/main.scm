@@ -11,6 +11,29 @@
   (lambda (enemy)
     (enemy-posy-set! enemy (+ (enemy-posy enemy) 5))))
 
+(define (collision bulletlist enemy)
+  (let loop ((rest bulletlist))
+    (if (null? rest)
+        #f
+        (if (> (shot-posx (car rest)) (enemy-posx enemy))
+            (if (< (shot-posx (car rest)) (+ (enemy-posx enemy) 20))
+               (if (> (shot-posy (car rest)) (-(enemy-posy enemy) 20))
+                   (if (< (shot-posy (car rest)) (enemy-posy enemy))
+                       (begin (shot-posy-set! (car rest) -10.0)
+                              #t)
+                       (loop (cdr rest)))
+                   #f)
+               #f)
+            #f))))
+
+(define (bullet-collision bulletlist enemylist)
+  (let loop ((rest enemylist))
+    (if (null? rest)
+        '()
+        (if (collision bulletlist (car rest))
+            (loop (cdr rest))
+            (cons (car rest) (loop (cdr rest)))))))
+
 (define (filter pred lis) ; Sleazing with EQ? makes this
   (let recur ((lis lis))  
     (if (null? lis) lis   ; Use NOT-PAIR? to handle dotted lists.
@@ -85,7 +108,7 @@
                   world))))
         (else
          world))))
-   (let ((spawntimer 3000) (spawncount 0))
+   (let ((spawntimer 1000) (spawncount 0))
      (lambda (cr time world)
        (println (string-append "time: " (object->string time) " ; world: " (object->string world)))
        ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
@@ -96,7 +119,7 @@
           (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
           (cairo_fill cr)
           (cairo_select_font_face cr "Sans" CAIRO_FONT_SLANT_NORMAL CAIRO_FONT_WEIGHT_BOLD)
-          (cairo_set_source_rgba cr 1.0 1.0 1.0 0.8)
+          (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
           (cairo_set_font_size cr 80.0)
           (cairo_move_to cr 275.0 350.0)
           (cairo_show_text cr "SPLASHSCREEN")
@@ -114,18 +137,12 @@
                      (world-enemies-set! world (cons (make-enemy (exact->inexact (random-integer 1280)) -10.0) (world-enemies world)))))
           (map update-bullet (world-bullets world))
           (map update-enemy (world-enemies world))
-
+          
 
           
           ;;Draw phase
           (cairo_set_source_rgba cr 0.0 0.0 0.0 1.0)
           (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
-          (cairo_fill cr)
-          (cairo_select_font_face cr "Sans" CAIRO_FONT_SLANT_NORMAL CAIRO_FONT_WEIGHT_BOLD)
-          (cairo_set_source_rgba cr 1.0 1.0 1.0 0.8)
-          (cairo_set_font_size cr 80.0)
-          (cairo_move_to cr 300.0 350.0)
-          (cairo_show_text cr "GAMESCREEN")
           (cairo_fill cr)
           (let loop ((rest (world-bullets world)))
             (if (null? rest)
@@ -142,6 +159,8 @@
                        (cairo_fill cr)
                        (loop (cdr rest)))))
           (world-bullets-set! world (remove (lambda (shot) (< (shot-posy shot) 0)) (world-bullets world)))
+          (world-enemies-set! world (remove (lambda (enemy) (> (enemy-posy enemy) 752)) (world-enemies world)))
+          (world-enemies-set! world (bullet-collision (world-bullets world) (world-enemies world)))
           (cairo_set_source_rgba cr 1.0 1.0 1.0 0.8)
           (cairo_rectangle cr (world-position world) 650.0 40.0 40.0)
           (cairo_fill cr))
