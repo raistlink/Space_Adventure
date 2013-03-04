@@ -134,6 +134,7 @@
           (cairo_move_to cr 400.0 450.0)
           (cairo_show_text cr "Space is for everyone")
           (cairo_fill cr))
+
          ((gamescreen)
           ;;Update phase
           (if (eq? (world-positionstate world) 'left)
