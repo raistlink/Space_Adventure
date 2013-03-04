@@ -5,38 +5,13 @@
 (define-structure enemy posx posy)
 (define-structure world gamestate position positionstate bullets enemies shipstate score highscore stars)
 
-(define game-contents
-  '((1 . ((color . (0.0 0.25 0.0))
-          (spawntimer . 1000)
-          (spawner . 1)))
-    (2 . ((color . (0.25 0.0 0.0))
-          (spawntimer . 800)
-          (spawner . 1)))
-    (3 . ((color . (0.0 0.0 0.25))
-          (spawntimer . 600)
-          (spawner . 1)))
-    (4 . ((color . (0.25 0.25 0.0))
-          (spawntimer . 400)
-          (spawner . 1)))
-    (5 . ((color . (0.0 0.25 0.25))
-          (spawntimer . 200)
-          (spawner . 1)))
-    (6 . ((color . (0.25 0.5 0.25))
-          (spawntimer . 200)
-          (spawner . 2)))
-    (7 . ((color . (0.25 0.25 0.5))
-          (spawntimer . 200)
-          (spawner . 3)))
-    (8 . ((color . (0.5 0.25 0.25))
-          (spawntimer . 200)
-          (spawner . 4)))
-    (9 . ((color . (0.5 0.25 0.5))
-          (spawntimer . 200)
-          (spawner . 5)))
-    (10 . ((color . (0.5 0.5 0.5))
-          (spawntimer . 200)
-          (spawner . 6)))))
 
+(define game-contents
+  (call-with-input-file "LevelData.dat" (lambda (port) (read-all port))))
+
+(define high-score
+  (call-with-input-file "HighScore.dat" (lambda (port) (read port))))
+  
 (define update-bullet 
   (lambda (shot)
     (shot-posy-set! shot (- (shot-posy shot) 10))))
@@ -259,6 +234,9 @@
             (cairo_fill cr))
            
            ((lost)
+            (if (> (world-score world) high-score)
+                (begin (set! high-score (world-score world))
+                       (call-with-output-file "HighScore.dat" (lambda (port) (pp high-score port)))))
             (cairo_set_source_rgba cr 0.25 0.0 0.0 .5)
             (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
             (cairo_fill cr)
@@ -271,7 +249,7 @@
             (cairo_move_to cr 350.0 500.0)
             (cairo_show_text cr "SCORE:")
             (cairo_move_to cr 760.0 500.0)
-            (cairo_show_text cr (number->string (world-highscore world)))
+            (cairo_show_text cr (number->string (world-score world)))
             (cairo_fill cr))
            
            ((highscores)
