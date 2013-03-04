@@ -72,7 +72,7 @@
     (unless (null? rest)
             (if (and (or (> (enemy-posx (car rest)) (world-position world)) (> (+ (enemy-posx (car rest)) 20) (world-position world)))
                      (< (enemy-posx (car rest))  (+ (world-position world) 40))
-                     (> (enemy-posy (car rest)) 610.0)
+                     (> (enemy-posy (car rest)) 630.0)
                      (< (enemy-posy (car rest)) 650.0))
                 #t
                 (loop (cdr rest))))))
@@ -267,6 +267,10 @@
             (cairo_set_font_size cr 80.0)
             (cairo_move_to cr 350.0 350.0)
             (cairo_show_text cr "YOU LOST")
+            (cairo_move_to cr 350.0 500.0)
+            (cairo_show_text cr "SCORE:")
+            (cairo_move_to cr 760.0 500.0)
+            (cairo_show_text cr (number->string (world-highscore world)))
             (cairo_fill cr))
            
            ((highscores)
