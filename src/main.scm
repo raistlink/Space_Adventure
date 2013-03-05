@@ -5,19 +5,22 @@
 (define-structure enemy posx posy)
 (define-structure world gamestate position positionstate bullets enemies shipstate score highscore stars)
 
-
 (define game-contents
   (call-with-input-file "LevelData.dat" (lambda (port) (read-all port))))
 
 (define high-score
   (call-with-input-file "HighScore.dat" (lambda (port) (read port))))
+
+
+(define animation-speed 0)
   
 (define update-bullet 
   (lambda (shot)
-    (shot-posy-set! shot (- (shot-posy shot) 10))))
+    (shot-posy-set! shot (- (shot-posy shot) animation-speed))))
+
 (define update-enemy
   (lambda (enemy)
-    (enemy-posy-set! enemy (+ (enemy-posy enemy) 5))))
+    (enemy-posy-set! enemy (+ (enemy-posy enemy) (* 0.4 animation-speed)))))
 
 (define update-highscore
   (lambda (world)
@@ -122,11 +125,13 @@
         (else
          world))))
    
-   (let ((spawntimer 1000) (spawncount 0) (spawner 1)) 
+   (let ((spawntimer 1000) (spawncount 0) (spawner 1) (dtime 0)) 
      (lambda (cr time world)
        (let* ((level-number (floor (+ (/ (world-score world) 100) 1))) (level-contents (cdr (assq level-number game-contents))))
          (if (> level-number 10)
              (set! level-number 10))
+         (set! animation-speed (- time dtime))
+         (set! dtime time)
          ;;(println (string-append "time: " (object->string time) " ; world: " (object->string world)))
          ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
          (case (world-gamestate world)
@@ -150,10 +155,12 @@
             ;;Update phase
             (if (eq? (world-positionstate world) 'left)
                 (if (> (world-position world) 320.0)
-                    (world-position-set! world (- (world-position world) 6))))
+                    (world-position-set! world (- (world-position world) (* 0.5 animation-speed)))
+                    (world-position-set! world 320.0)))
             (if (eq? (world-positionstate world) 'right)
                 (if (< (world-position world) 920.0)
-                    (world-position-set! world (+ (world-position world) 6))))
+                    (world-position-set! world (+ (world-position world) (* 0.5 animation-speed)))
+                    (world-position-set! world 920.0)))
             (if (> (- time spawncount) spawntimer)
                 (begin (set! spawncount time)
                        (let loop ((spawns spawner) (counter 0))
@@ -199,7 +206,7 @@
             (cairo_set_font_size cr 60.0)
             (cairo_move_to cr 20.0 300.0)
             (cairo_show_text cr "LEVEL")
-            (cairo_move_to cr 250.0 300.0)
+            (cairo_move_to cr 230.0 300.0)
             (cairo_show_text cr  (number->string level-number))
 
             
@@ -253,14 +260,19 @@
             (cairo_fill cr))
            
            ((highscores)
-            (cairo_set_source_rgba cr 0.0 0.0 0.0 1.0)
+            (cairo_set_source_rgba cr 0.0 0.25 0.0 1.0)
             (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
             (cairo_fill cr)
             (cairo_select_font_face cr "Sans" CAIRO_FONT_SLANT_NORMAL CAIRO_FONT_WEIGHT_BOLD)
             (cairo_set_source_rgba cr 1.0 1.0 1.0 0.8)
             (cairo_set_font_size cr 80.0)
-            (cairo_move_to cr 300.0 350.0)
-            (cairo_show_text cr "HIGHSCORES")
+            (cairo_move_to cr 380.0 100.0)
+            (cairo_show_text cr "Lifetime")
+            (cairo_move_to cr 340.0 200.0)
+            (cairo_show_text cr "HIGHSCORE")
+            (cairo_set_font_size cr 500.0)
+            (cairo_move_to cr 20.0 650.0)
+            (cairo_show_text cr (number->string high-score))
             (cairo_fill cr)))
          world)))
    (make-world 
