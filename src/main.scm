@@ -10,17 +10,7 @@
 
 (define high-score
   (call-with-input-file "HighScore.dat" (lambda (port) (read port))))
-
-
-(define animation-speed 0)
-  
-(define update-bullet 
-  (lambda (shot)
-    (shot-posy-set! shot (- (shot-posy shot) animation-speed))))
-
-(define update-enemy
-  (lambda (enemy)
-    (enemy-posy-set! enemy (+ (enemy-posy enemy) (* 0.4 animation-speed)))))
+   
 
 (define update-highscore
   (lambda (world)
@@ -125,13 +115,13 @@
         (else
          world))))
    
-   (let ((spawntimer 1000) (spawncount 0) (spawner 1) (dtime 0)) 
+   (let ((spawntimer 1000) (spawncount 0) (spawner 1) (last-time 0) (delta-time 0)) 
      (lambda (cr time world)
        (let* ((level-number (floor (+ (/ (world-score world) 100) 1))) (level-contents (cdr (assq level-number game-contents))))
          (if (> level-number 10)
              (set! level-number 10))
-         (set! animation-speed (- time dtime))
-         (set! dtime time)
+         (set! delta-time (- time last-time))
+         (set! last-time time)
          ;;(println (string-append "time: " (object->string time) " ; world: " (object->string world)))
          ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
          (case (world-gamestate world)
@@ -149,17 +139,25 @@
             (cairo_set_font_size cr 40.0)
             (cairo_move_to cr 400.0 450.0)
             (cairo_show_text cr "Space is for everyone")
+            (cairo_fill cr)
+            (cairo_set_font_size cr 20.0)
+            (cairo_move_to cr 520.0 600.0)
+            (cairo_show_text cr "Press ENTER to start")
+            (cairo_fill cr)
+            (cairo_set_font_size cr 20.0)
+            (cairo_move_to cr 510.0 650.0)
+            (cairo_show_text cr "Press H for HIGHSCORE")
             (cairo_fill cr))
-           
+
            ((gamescreen)
             ;;Update phase
             (if (eq? (world-positionstate world) 'left)
                 (if (> (world-position world) 320.0)
-                    (world-position-set! world (- (world-position world) (* 0.5 animation-speed)))
+                    (world-position-set! world (- (world-position world) (* 0.5 delta-time)))
                     (world-position-set! world 320.0)))
             (if (eq? (world-positionstate world) 'right)
                 (if (< (world-position world) 920.0)
-                    (world-position-set! world (+ (world-position world) (* 0.5 animation-speed)))
+                    (world-position-set! world (+ (world-position world) (* 0.5 delta-time)))
                     (world-position-set! world 920.0)))
             (if (> (- time spawncount) spawntimer)
                 (begin (set! spawncount time)
@@ -169,8 +167,6 @@
                              (begin (world-enemies-set! world (cons (make-enemy (exact->inexact (+ (random-integer 620) 320)) 5.0) (world-enemies world)))
                                     (loop spawns (+ counter 1)))))))
             (update-highscore world)
-            (map update-bullet (world-bullets world))
-            (map update-enemy (world-enemies world))
             (set! spawntimer (cdr (assq 'spawntimer level-contents)))
             (set! spawner (cdr (assq 'spawner level-contents)))
             
@@ -218,16 +214,18 @@
                          (cairo_fill cr)
                          (loop (cdr rest)))))
             (let loop ((rest (world-bullets world)))
-              (if (null? rest)
+              (if (null? rest) 
                   '()
-                  (begin (cairo_set_source_rgba cr 1.0 1.0 0.0 1.0)
+                  (begin (shot-posy-set! (car rest) (- (shot-posy (car rest)) delta-time))
+                         (cairo_set_source_rgba cr 1.0 1.0 0.0 1.0)
                          (cairo_rectangle cr (shot-posx (car rest)) (shot-posy (car rest)) 5.0 10.0)
                          (cairo_fill cr)
                          (loop (cdr rest)))))
             (let loop ((rest (world-enemies world)))
               (if (null? rest)
                   '()
-                  (begin (cairo_set_source_rgba cr 0.0 1.0 1.0 1.0)
+                  (begin (enemy-posy-set! (car rest) (+ (enemy-posy (car rest)) (* 0.4 delta-time)))
+                         (cairo_set_source_rgba cr 0.0 1.0 1.0 1.0)
                          (cairo_rectangle cr (enemy-posx (car rest)) (enemy-posy (car rest)) 20.0 20.0)
                          (cairo_fill cr)
                          (loop (cdr rest)))))
@@ -260,7 +258,7 @@
             (cairo_fill cr))
            
            ((highscores)
-            (cairo_set_source_rgba cr 0.0 0.25 0.0 1.0)
+            (cairo_set_source_rgba cr 0.25 0.0 0.0 1.0)
             (cairo_rectangle cr 0.0 0.0 1280.0 752.0)
             (cairo_fill cr)
             (cairo_select_font_face cr "Sans" CAIRO_FONT_SLANT_NORMAL CAIRO_FONT_WEIGHT_BOLD)
